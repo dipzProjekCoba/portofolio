@@ -1,12 +1,12 @@
 /**
  * PORTFOLIO SCRIPT - DIPZKYY
- * Full JavaScript with Skill Matrix 3D Orbit
+ * Enhanced with PDF Viewer, External Projects, and Additional Features
  */
 
 document.addEventListener('DOMContentLoaded', () => {
     
     // =========================================
-    // 1. GLOBAL VARIABLES & SELECTORS
+    // 1. GLOBAL VARIABLES & SELECTORS - ENHANCED
     // =========================================
     const dom = {
         html: document.documentElement,
@@ -27,6 +27,30 @@ document.addEventListener('DOMContentLoaded', () => {
         progressBar: document.querySelector('.progress-bar'),
         navLinks: document.querySelectorAll('.nav-links a'),
         mobileLinks: document.querySelectorAll('.mobile-link'),
+        
+        // PDF Viewer Elements
+        pdfModal: document.getElementById('pdfModal'),
+        pdfModalOverlay: document.getElementById('pdfModalOverlay'),
+        pdfModalClose: document.getElementById('pdfModalClose'),
+        pdfCanvas: document.getElementById('pdfCanvas'),
+        pdfPrevPage: document.getElementById('pdfPrevPage'),
+        pdfNextPage: document.getElementById('pdfNextPage'),
+        pdfCurrentPage: document.getElementById('pdfCurrentPage'),
+        pdfTotalPages: document.getElementById('pdfTotalPages'),
+        pdfZoomOut: document.getElementById('pdfZoomOut'),
+        pdfZoomIn: document.getElementById('pdfZoomIn'),
+        pdfZoomLevel: document.querySelector('.pdf-zoom-level'),
+        pdfDownloadBtn: document.getElementById('pdfDownloadBtn'),
+        pdfPrintBtn: document.getElementById('pdfPrintBtn'),
+        pdfModalTitle: document.getElementById('pdfModalTitle'),
+        
+        // CV View Buttons
+        viewCvBtn: document.getElementById('viewCvBtn'),
+        viewCvBtnMobile: document.getElementById('viewCvBtnMobile'),
+        
+        // Email & Share Elements
+        emailLink: document.getElementById('emailLink'),
+        shareBtn: document.getElementById('shareBtn'),
         
         // Stats elements
         totalRepos: document.getElementById('totalRepos'),
@@ -97,6 +121,20 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     };
 
+    // PDF Viewer State
+    const pdfState = {
+        pdfDoc: null,
+        currentPage: 1,
+        totalPages: 1,
+        zoomLevel: 1.0,
+        maxZoom: 3.0,
+        minZoom: 0.5,
+        zoomStep: 0.1,
+        currentPdfUrl: '',
+        currentPdfTitle: '',
+        renderTask: null
+    };
+
     // Animation State
     let animationState = {
         isTyping: true,
@@ -133,6 +171,13 @@ document.addEventListener('DOMContentLoaded', () => {
             initContactForm();
             initParticles();
             initBackToTop();
+            initPDFViewer();
+            initEmailCopy();
+            initShareFunctionality();
+            initCertificatePreview();
+            
+            // Lazy load images
+            lazyLoadImages();
             
             // Add loaded class to body
             dom.body.classList.add('loaded');
@@ -388,12 +433,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. THEME MANAGEMENT
     // =========================================
     function initTheme() {
-        const savedTheme = localStorage.getItem('portfolio-theme') || 'dark';
-        setTheme(savedTheme);
+        // Check for saved theme or system preference
+        const savedTheme = localStorage.getItem('portfolio-theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else {
+            setTheme(systemPrefersDark ? 'dark' : 'light');
+        }
         
         // Add event listeners to theme toggles
         dom.themeToggles.forEach(toggle => {
             toggle.addEventListener('click', toggleTheme);
+        });
+        
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('portfolio-theme')) {
+                setTheme(e.matches ? 'dark' : 'light');
+            }
         });
     }
 
@@ -484,7 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateActiveNavLink() {
         const scrollPosition = window.scrollY + 100;
-        const sections = ['home', 'about', 'skills', 'github', 'contact'];
+        const sections = ['home', 'about', 'skills', 'certificates', 'github', 'projects', 'contact'];
         
         sections.forEach(section => {
             const element = document.getElementById(section);
@@ -842,7 +901,322 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =========================================
-    // 9. CONTACT FORM
+    // 9. PDF VIEWER IMPLEMENTATION
+    // =========================================
+    function initPDFViewer() {
+        // CV View Buttons
+        if (dom.viewCvBtn) {
+            dom.viewCvBtn.addEventListener('click', () => {
+                openPDFViewer('assets/pdf/CV_Diva Islamy Rizky Akbar_.pdf', 'Curriculum Vitae - Diva Islamy Rizky Akbar');
+            });
+        }
+        
+        if (dom.viewCvBtnMobile) {
+            dom.viewCvBtnMobile.addEventListener('click', () => {
+                openPDFViewer('assets/pdf/CV_Diva Islamy Rizky Akbar_.pdf', 'Curriculum Vitae - Diva Islamy Rizky Akbar');
+            });
+        }
+        
+        // PDF Modal Controls
+        if (dom.pdfModalClose) {
+            dom.pdfModalClose.addEventListener('click', closePDFViewer);
+        }
+        
+        if (dom.pdfModalOverlay) {
+            dom.pdfModalOverlay.addEventListener('click', closePDFViewer);
+        }
+        
+        // PDF Navigation
+        if (dom.pdfPrevPage) {
+            dom.pdfPrevPage.addEventListener('click', goToPrevPage);
+        }
+        
+        if (dom.pdfNextPage) {
+            dom.pdfNextPage.addEventListener('click', goToNextPage);
+        }
+        
+        // PDF Zoom Controls
+        if (dom.pdfZoomOut) {
+            dom.pdfZoomOut.addEventListener('click', zoomOut);
+        }
+        
+        if (dom.pdfZoomIn) {
+            dom.pdfZoomIn.addEventListener('click', zoomIn);
+        }
+        
+        // PDF Actions
+        if (dom.pdfPrintBtn) {
+            dom.pdfPrintBtn.addEventListener('click', printPDF);
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', handlePDFKeyboardShortcuts);
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && dom.pdfModal.classList.contains('show')) {
+                closePDFViewer();
+            }
+        });
+    }
+
+    function initCertificatePreview() {
+        // Add click event to all preview buttons
+        document.querySelectorAll('.btn-preview, .pdf-thumbnail').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const pdfUrl = button.getAttribute('data-pdf');
+                const pdfTitle = button.getAttribute('data-title') || 'Preview Dokumen';
+                
+                if (pdfUrl) {
+                    openPDFViewer(pdfUrl, pdfTitle);
+                }
+            });
+        });
+    }
+
+    async function openPDFViewer(pdfUrl, title = 'Preview Dokumen') {
+        try {
+            // Set loading state
+            dom.pdfModalTitle.textContent = title;
+            dom.pdfDownloadBtn.href = pdfUrl;
+            dom.pdfDownloadBtn.download = pdfUrl.split('/').pop();
+            
+            // Show modal
+            dom.pdfModal.classList.add('show');
+            dom.body.style.overflow = 'hidden';
+            
+            // Reset PDF state
+            pdfState.currentPage = 1;
+            pdfState.zoomLevel = 1.0;
+            pdfState.currentPdfUrl = pdfUrl;
+            pdfState.currentPdfTitle = title;
+            
+            // Load PDF document
+            pdfState.pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+            pdfState.totalPages = pdfState.pdfDoc.numPages;
+            
+            // Update UI
+            updatePDFControls();
+            
+            // Render first page
+            await renderPDFPage();
+            
+        } catch (error) {
+            console.error('Error loading PDF:', error);
+            showNotification('Gagal memuat dokumen PDF', 'error');
+            closePDFViewer();
+        }
+    }
+
+    function closePDFViewer() {
+        dom.pdfModal.classList.remove('show');
+        dom.body.style.overflow = '';
+        
+        // Clean up
+        if (pdfState.renderTask) {
+            pdfState.renderTask.cancel();
+        }
+        
+        // Clear canvas
+        const ctx = dom.pdfCanvas.getContext('2d');
+        ctx.clearRect(0, 0, dom.pdfCanvas.width, dom.pdfCanvas.height);
+        
+        // Reset state
+        pdfState.pdfDoc = null;
+        pdfState.currentPage = 1;
+    }
+
+    async function renderPDFPage() {
+        if (!pdfState.pdfDoc || !dom.pdfCanvas) return;
+        
+        try {
+            // Cancel any ongoing render
+            if (pdfState.renderTask) {
+                pdfState.renderTask.cancel();
+            }
+            
+            // Get page
+            const page = await pdfState.pdfDoc.getPage(pdfState.currentPage);
+            
+            // Set canvas dimensions
+            const viewport = page.getViewport({ scale: pdfState.zoomLevel });
+            dom.pdfCanvas.width = viewport.width;
+            dom.pdfCanvas.height = viewport.height;
+            
+            // Render page
+            const renderContext = {
+                canvasContext: dom.pdfCanvas.getContext('2d'),
+                viewport: viewport
+            };
+            
+            pdfState.renderTask = page.render(renderContext);
+            await pdfState.renderTask.promise;
+            
+            // Update controls
+            updatePDFControls();
+            
+        } catch (error) {
+            if (error.name !== 'RenderingCancelled') {
+                console.error('Error rendering PDF page:', error);
+            }
+        }
+    }
+
+    function updatePDFControls() {
+        // Update page info
+        dom.pdfCurrentPage.textContent = pdfState.currentPage;
+        dom.pdfTotalPages.textContent = pdfState.totalPages;
+        
+        // Update zoom level
+        dom.pdfZoomLevel.textContent = `${Math.round(pdfState.zoomLevel * 100)}%`;
+        
+        // Update button states
+        dom.pdfPrevPage.disabled = pdfState.currentPage <= 1;
+        dom.pdfNextPage.disabled = pdfState.currentPage >= pdfState.totalPages;
+        dom.pdfZoomOut.disabled = pdfState.zoomLevel <= pdfState.minZoom;
+        dom.pdfZoomIn.disabled = pdfState.zoomLevel >= pdfState.maxZoom;
+        
+        // Update PDF title
+        if (dom.pdfModalTitle) {
+            dom.pdfModalTitle.textContent = pdfState.currentPdfTitle;
+        }
+    }
+
+    async function goToPrevPage() {
+        if (pdfState.currentPage > 1) {
+            pdfState.currentPage--;
+            await renderPDFPage();
+        }
+    }
+
+    async function goToNextPage() {
+        if (pdfState.currentPage < pdfState.totalPages) {
+            pdfState.currentPage++;
+            await renderPDFPage();
+        }
+    }
+
+    function zoomOut() {
+        if (pdfState.zoomLevel > pdfState.minZoom) {
+            pdfState.zoomLevel = Math.max(pdfState.minZoom, pdfState.zoomLevel - pdfState.zoomStep);
+            renderPDFPage();
+        }
+    }
+
+    function zoomIn() {
+        if (pdfState.zoomLevel < pdfState.maxZoom) {
+            pdfState.zoomLevel = Math.min(pdfState.maxZoom, pdfState.zoomLevel + pdfState.zoomStep);
+            renderPDFPage();
+        }
+    }
+
+    function printPDF() {
+        if (pdfState.currentPdfUrl) {
+            const printWindow = window.open(pdfState.currentPdfUrl, '_blank');
+            if (printWindow) {
+                printWindow.addEventListener('load', () => {
+                    printWindow.print();
+                });
+            }
+        }
+    }
+
+    function handlePDFKeyboardShortcuts(e) {
+        if (!dom.pdfModal.classList.contains('show')) return;
+        
+        switch(e.key) {
+            case 'ArrowLeft':
+            case 'PageUp':
+                e.preventDefault();
+                goToPrevPage();
+                break;
+            case 'ArrowRight':
+            case 'PageDown':
+                e.preventDefault();
+                goToNextPage();
+                break;
+            case '-':
+                e.preventDefault();
+                zoomOut();
+                break;
+            case '+':
+            case '=':
+                e.preventDefault();
+                zoomIn();
+                break;
+            case '0':
+                e.preventDefault();
+                pdfState.zoomLevel = 1.0;
+                renderPDFPage();
+                break;
+        }
+    }
+
+    // =========================================
+    // 10. EMAIL COPY FUNCTIONALITY
+    // =========================================
+    function initEmailCopy() {
+        if (!dom.emailLink) return;
+        
+        dom.emailLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            const email = 'mzdp12@gmail.com';
+            
+            try {
+                await navigator.clipboard.writeText(email);
+                showNotification('Email berhasil disalin ke clipboard!', 'success');
+                
+                // Visual feedback
+                const originalText = dom.emailLink.innerHTML;
+                dom.emailLink.innerHTML = '<i class="fas fa-check"></i> Email Disalin!';
+                dom.emailLink.style.color = '#10b981';
+                
+                setTimeout(() => {
+                    dom.emailLink.innerHTML = originalText;
+                    dom.emailLink.style.color = '';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Failed to copy email:', error);
+                showNotification('Gagal menyalin email. Silakan copy secara manual.', 'error');
+            }
+        });
+    }
+
+    // =========================================
+    // 11. SHARE FUNCTIONALITY
+    // =========================================
+    function initShareFunctionality() {
+        if (!dom.shareBtn) return;
+        
+        dom.shareBtn.addEventListener('click', async () => {
+            const shareData = {
+                title: 'Portfolio Dipzkyy | Fullstack Developer',
+                text: 'Lihat portfolio Diva Islamy Rizky Akbar - Fullstack Developer spesialis PHP & JavaScript',
+                url: window.location.href
+            };
+            
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    // Fallback: Copy URL to clipboard
+                    await navigator.clipboard.writeText(window.location.href);
+                    showNotification('Link portfolio berhasil disalin ke clipboard!', 'success');
+                }
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('Error sharing:', error);
+                    showNotification('Gagal membagikan portfolio', 'error');
+                }
+            }
+        });
+    }
+
+    // =========================================
+    // 12. CONTACT FORM
     // =========================================
     function initContactForm() {
         if (!dom.contactForm) return;
@@ -938,13 +1312,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             if (response.ok) {
-                showNotification('Pesan berhasil dikirim!', 'success');
+                showNotification('Pesan berhasil dikirim! Saya akan membalas segera.', 'success');
                 dom.contactForm.reset();
             } else {
                 throw new Error('Form submission failed');
             }
         } catch (error) {
-            showNotification('Gagal mengirim pesan. Silakan coba lagi.', 'error');
+            showNotification('Gagal mengirim pesan. Silakan coba lagi atau email langsung ke mzdp12@gmail.com.', 'error');
         } finally {
             // Reset button state
             dom.submitBtn.disabled = false;
@@ -954,7 +1328,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =========================================
-    // 10. NOTIFICATION SYSTEM
+    // 13. NOTIFICATION SYSTEM
     // =========================================
     function showNotification(message, type = 'info') {
         if (!dom.notification || !dom.notificationText) return;
@@ -962,7 +1336,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Set message and type
         dom.notificationText.textContent = message;
         
-        // Set icon based on type
+        // Set icon and color based on type
         const icon = dom.notification.querySelector('.notification-icon i');
         if (icon) {
             switch (type) {
@@ -988,13 +1362,19 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.notification.classList.add('show');
         
         // Auto hide after 4 seconds
-        setTimeout(() => {
+        const hideTimeout = setTimeout(() => {
             dom.notification.classList.remove('show');
         }, 4000);
+        
+        // Clear timeout if notification is clicked
+        dom.notification.addEventListener('click', () => {
+            clearTimeout(hideTimeout);
+            dom.notification.classList.remove('show');
+        });
     }
 
     // =========================================
-    // 11. BACKGROUND PARTICLES
+    // 14. BACKGROUND PARTICLES
     // =========================================
     function initParticles() {
         const container = document.getElementById('bgParticles');
@@ -1053,7 +1433,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =========================================
-    // 12. BACK TO TOP BUTTON
+    // 15. BACK TO TOP BUTTON
     // =========================================
     function initBackToTop() {
         if (!dom.backToTop) return;
@@ -1077,7 +1457,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =========================================
-    // 13. UTILITY FUNCTIONS
+    // 16. LAZY LOAD IMAGES
+    // =========================================
+    function lazyLoadImages() {
+        const images = document.querySelectorAll('img[loading="lazy"]');
+        
+        if ('IntersectionObserver' in window) {
+            const imageObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.classList.add('loaded');
+                        imageObserver.unobserve(img);
+                    }
+                });
+            });
+            
+            images.forEach(img => imageObserver.observe(img));
+        } else {
+            // Fallback for older browsers
+            images.forEach(img => {
+                img.classList.add('loaded');
+            });
+        }
+    }
+
+    // =========================================
+    // 17. UTILITY FUNCTIONS
     // =========================================
     function debounce(func, wait) {
         let timeout;
@@ -1105,7 +1511,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =========================================
-    // 14. INITIALIZE EVERYTHING
+    // 18. ERROR HANDLING & SAFE FETCH
+    // =========================================
+    const safeFetch = async (url, options = {}) => {
+        try {
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    'Accept': 'application/vnd.github.v3+json',
+                    ...options.headers
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Fetch error:', error);
+            return null;
+        }
+    };
+
+    // =========================================
+    // 19. SERVICE WORKER REGISTRATION (PWA)
+    // =========================================
+    if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').catch(error => {
+                console.log('ServiceWorker registration failed:', error);
+            });
+        });
+    }
+
+    // =========================================
+    // 20. INITIALIZE EVERYTHING & GLOBAL EXPORTS
     // =========================================
     
     // Add CSS for dynamic elements
@@ -1115,7 +1556,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.portfolio = {
         reloadProjects: () => renderProjects(currentFilter),
         showNotification,
-        toggleTheme
+        toggleTheme,
+        openPDFViewer: (url, title) => openPDFViewer(url, title),
+        closePDFViewer
     };
 });
 
@@ -1227,6 +1670,21 @@ function addDynamicStyles() {
             100% { left: 100%; }
         }
         
+        /* PDF Canvas Loading State */
+        .pdf-viewer-container.loading {
+            position: relative;
+        }
+        
+        .pdf-viewer-container.loading::after {
+            content: 'Memuat dokumen...';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
         /* Responsive Skill Matrix */
         @media (max-width: 768px) {
             .skill-tooltip {
@@ -1239,6 +1697,125 @@ function addDynamicStyles() {
                 padding: 2px 6px;
                 bottom: -25px;
             }
+            
+            /* PDF Modal Mobile Fixes */
+            .pdf-modal-content {
+                width: 95% !important;
+                height: 85vh !important;
+            }
+            
+            #pdfCanvas {
+                max-height: 50vh !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .pdf-modal-content {
+                width: 100% !important;
+                height: 100vh !important;
+                border-radius: 0 !important;
+            }
+            
+            .pdf-controls {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
+            
+            .pdf-actions {
+                flex-direction: column;
+            }
+            
+            .pdf-actions .btn {
+                width: 100%;
+            }
+        }
+        
+        /* Animation for Certificate Cards */
+        .certificate-card {
+            animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            opacity: 0;
+        }
+        
+        /* External Project Cards */
+        .external-project-card {
+            animation: slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            opacity: 0;
+        }
+        
+        /* Loading Animation for PDF */
+        @keyframes pdfLoading {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        
+        .pdf-loading {
+            animation: pdfLoading 1.5s ease-in-out infinite;
+        }
+        
+        /* Print Styles for PDF */
+        @media print {
+            .pdf-modal-overlay,
+            .pdf-modal-close,
+            .pdf-controls,
+            .pdf-zoom-controls,
+            .pdf-actions {
+                display: none !important;
+            }
+            
+            .pdf-modal-content {
+                position: static !important;
+                transform: none !important;
+                width: 100% !important;
+                height: auto !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            
+            #pdfCanvas {
+                max-width: 100% !important;
+                max-height: none !important;
+            }
+        }
+        
+        /* Accessibility Improvements */
+        @media (prefers-reduced-motion: reduce) {
+            .skill-node,
+            .certificate-card,
+            .external-project-card,
+            .tech-icon,
+            .coding-sphere,
+            .skill-orbit-3d {
+                animation: none !important;
+                transition: none !important;
+            }
+            
+            .pdf-modal-content {
+                animation: none !important;
+            }
+        }
+        
+        /* High Contrast Mode Support */
+        @media (prefers-contrast: high) {
+            :root {
+                --primary: #0066cc;
+                --text-main: #000000;
+                --text-muted: #333333;
+            }
+            
+            [data-theme="dark"] {
+                --text-main: #ffffff;
+                --text-muted: #cccccc;
+            }
+            
+            .skill-node,
+            .certificate-card,
+            .project-card,
+            .service-card,
+            .info-card {
+                border: 2px solid var(--primary) !important;
+            }
         }
     `;
     
@@ -1246,3 +1823,63 @@ function addDynamicStyles() {
     styleSheet.textContent = styles;
     document.head.appendChild(styleSheet);
 }
+
+// Performance Monitoring
+if (typeof PerformanceObserver !== 'undefined') {
+    const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+            console.log(`[Performance] ${entry.name}: ${entry.duration.toFixed(2)}ms`);
+        }
+    });
+    
+    observer.observe({ entryTypes: ['measure', 'paint'] });
+}
+
+// Error Tracking
+window.addEventListener('error', (event) => {
+    console.error('JavaScript Error:', {
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno
+    });
+});
+
+// Unhandled Promise Rejection
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('Unhandled Promise Rejection:', event.reason);
+});
+
+// Page Visibility API
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        console.log('Page is now hidden');
+    } else {
+        console.log('Page is now visible');
+    }
+});
+
+// Offline/Online Detection
+window.addEventListener('offline', () => {
+    console.log('You are now offline');
+    if (typeof showNotification === 'function') {
+        showNotification('Anda sedang offline. Beberapa fitur mungkin tidak tersedia.', 'warning');
+    }
+});
+
+window.addEventListener('online', () => {
+    console.log('You are now online');
+    if (typeof showNotification === 'function') {
+        showNotification('Koneksi internet telah pulih.', 'success');
+    }
+});
+
+// Memory Leak Prevention
+window.addEventListener('beforeunload', () => {
+    // Clean up any intervals or timeouts
+    const highestId = setTimeout(() => {}, 0);
+    for (let i = 0; i < highestId; i++) {
+        clearTimeout(i);
+        clearInterval(i);
+    }
+});

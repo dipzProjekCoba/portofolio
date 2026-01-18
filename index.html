@@ -16,12 +16,39 @@
     <meta property="og:description" content="Spesialis PHP, JavaScript, dan Database Management. Lihat portofolio lengkap saya di sini.">
     <meta property="og:image" content="assets/og-image.jpg">
     
+    <!-- SEO Enhancement -->
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://dipzkyy.github.io/">
+    <meta property="og:locale" content="id_ID">
+    <meta property="og:site_name" content="Dipzkyy Portfolio">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "Diva Islamy Rizky Akbar",
+        "url": "https://dipzkyy.github.io",
+        "jobTitle": "Fullstack Developer",
+        "skills": "PHP, JavaScript, Laravel, React, MySQL, PostgreSQL",
+        "email": "mzdp12@gmail.com",
+        "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Blitar",
+            "addressRegion": "Jawa Timur"
+        }
+    }
+    </script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- PDF.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="assets/favicon.ico">
@@ -61,6 +88,52 @@
         <div class="glow-overlay"></div>
     </div>
 
+    <!-- PDF Preview Modal -->
+    <div class="pdf-modal" id="pdfModal">
+        <div class="pdf-modal-overlay" id="pdfModalOverlay"></div>
+        <div class="pdf-modal-content">
+            <div class="pdf-modal-header">
+                <h3 id="pdfModalTitle">Preview Dokumen</h3>
+                <button class="pdf-modal-close" id="pdfModalClose" aria-label="Tutup">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="pdf-modal-body">
+                <div class="pdf-viewer-container">
+                    <canvas id="pdfCanvas"></canvas>
+                    <div class="pdf-controls">
+                        <button class="pdf-control-btn" id="pdfPrevPage" aria-label="Halaman sebelumnya">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span class="pdf-page-info">
+                            Halaman: <span id="pdfCurrentPage">1</span> / <span id="pdfTotalPages">1</span>
+                        </span>
+                        <button class="pdf-control-btn" id="pdfNextPage" aria-label="Halaman berikutnya">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="pdf-zoom-controls">
+                        <button class="pdf-zoom-btn" id="pdfZoomOut" aria-label="Zoom out">
+                            <i class="fas fa-search-minus"></i>
+                        </button>
+                        <span class="pdf-zoom-level">100%</span>
+                        <button class="pdf-zoom-btn" id="pdfZoomIn" aria-label="Zoom in">
+                            <i class="fas fa-search-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="pdf-actions">
+                    <a href="#" id="pdfDownloadBtn" class="btn btn-primary" download>
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                    <button class="btn btn-secondary" id="pdfPrintBtn">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="notification" id="notification">
         <div class="notification-content">
             <div class="notification-icon">
@@ -82,15 +155,17 @@
                     <li><a href="#home">Home</a></li>
                     <li><a href="#about">Tentang</a></li>
                     <li><a href="#skills">Teknologi</a></li>
+                    <li><a href="#certificates">Sertifikat</a></li>
                     <li><a href="#github">Portfolio</a></li>
+                    <li><a href="#projects">Proyek</a></li>
                     <li><a href="#contact">Kontak</a></li>
                     
                     <li class="nav-download desktop-only">
-                        <a href="assets/CV_Diva_Islamy_Rizky_Akbar.pdf" download="CV_Diva_Islamy_Rizky_Akbar.pdf" class="cv-download-btn" id="downloadCvNav">
-                            <i class="fas fa-file-download"></i>
-                            <span>Download CV</span>
+                        <button class="cv-download-btn" id="viewCvBtn">
+                            <i class="fas fa-file-pdf"></i>
+                            <span>Lihat CV</span>
                             <div class="cv-btn-wave"></div>
-                        </a>
+                        </button>
                     </li>
                     
                     <li class="nav-settings desktop-only">
@@ -119,13 +194,15 @@
             <a href="#home" class="mobile-link">Home</a>
             <a href="#about" class="mobile-link">Tentang</a>
             <a href="#skills" class="mobile-link">Teknologi</a>
-            <a href="#github" class="mobile-link">Portfolio</a>
+            <a href="#certificates" class="mobile-link">Sertifikat</a>
+            <a href="#github" class="mobile-link">GitHub</a>
+            <a href="#projects" class="mobile-link">Proyek</a>
             <a href="#contact" class="mobile-link">Kontak</a>
-            <a href="assets/CV_Diva_Islamy_Rizky_Akbar.pdf" download="CV_Diva_Islamy_Rizky_Akbar.pdf" class="cv-download-btn mobile-cv-btn">
-                <i class="fas fa-download"></i>
-                <span>Download CV</span>
+            <button class="cv-download-btn mobile-cv-btn" id="viewCvBtnMobile">
+                <i class="fas fa-file-pdf"></i>
+                <span>Lihat CV</span>
                 <div class="cv-btn-wave"></div>
-            </a>
+            </button>
         </div>
     </div>
 
@@ -151,8 +228,8 @@
                         <a href="#contact" class="btn btn-primary">
                             <i class="fas fa-paper-plane"></i> Hire Me
                         </a>
-                        <a href="#github" class="btn btn-secondary">
-                            <i class="fab fa-github"></i> Lihat Project
+                        <a href="#projects" class="btn btn-secondary">
+                            <i class="fas fa-external-link-alt"></i> Lihat Proyek
                         </a>
                     </div>
                 </div>
@@ -201,7 +278,7 @@
             <div class="about-content">
                 <div class="about-photo scroll-animate" data-animation="left">
                     <div class="photo-container">
-                        <img src="assets/gwejh.jpeg" alt="Diva Islamy Rizky Akbar" loading="lazy" onerror="this.src='https://via.placeholder.com/300x400?text=Dipzkyy'">
+                        <img src="assets/diva.jpg" alt="Diva Islamy Rizky Akbar" loading="lazy" onerror="this.src='https://via.placeholder.com/300x400?text=Dipzkyy'">
                         <div class="photo-overlay"></div>
                     </div>
                 </div>
@@ -216,6 +293,16 @@
                             Lulusan SMK jurusan RPL yang kini menempuh pendidikan S1 Teknik Informatika di Universitas Islam Blitar. 
                             Memiliki pengalaman magang di PT. Telkom Indonesia dan passionate dalam pengembangan solusi backend dan frontend yang terintegrasi.
                         </p>
+                        
+                        <div class="achievements">
+                            <h4><i class="fas fa-trophy"></i> Pencapaian:</h4>
+                            <ul>
+                                <li>Lulusan terbaik SMK Jurusan RPL</li>
+                                <li>Magang di PT. Telkom Indonesia</li>
+                                <li>4 sertifikat Microsoft & Python</li>
+                                <li>Proyek open source aktif di GitHub</li>
+                            </ul>
+                        </div>
                         
                         <div class="info-grid">
                             <div class="info-item">
@@ -421,10 +508,120 @@
         </div>
     </section>
 
+    <!-- NEW SECTION: Certificates & CV -->
+    <section id="certificates" class="certificates">
+        <div class="container">
+            <div class="section-title scroll-animate" data-animation="bottom">
+                <h2>Sertifikat & Dokumen</h2>
+                <p>Koleksi sertifikat dan dokumen profesional saya</p>
+            </div>
+            
+            <div class="certificates-grid">
+                <!-- CV Card -->
+                <div class="certificate-card scroll-animate" data-animation="up">
+                    <div class="certificate-badge cv-badge">
+                        <i class="fas fa-file-alt"></i> CV
+                    </div>
+                    <div class="certificate-thumbnail">
+                        <div class="pdf-thumbnail" data-pdf="assets/pdf/CV_Diva Islamy Rizky Akbar_.pdf">
+                            <i class="fas fa-user-tie"></i>
+                            <span class="pdf-preview-text">Preview CV</span>
+                        </div>
+                    </div>
+                    <div class="certificate-info">
+                        <h3>Curriculum Vitae</h3>
+                        <p>Dokumen CV lengkap berisi profil, pendidikan, pengalaman, dan keterampilan.</p>
+                        <div class="certificate-actions">
+                            <button class="btn-preview" data-pdf="assets/pdf/CV_Diva Islamy Rizky Akbar_.pdf" data-title="Curriculum Vitae - Diva Islamy Rizky Akbar">
+                                <i class="fas fa-eye"></i> Preview
+                            </button>
+                            <a href="assets/pdf/CV_Diva Islamy Rizky Akbar_.pdf" download="CV_Diva_Islamy_Rizky_Akbar.pdf" class="btn-download">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Certificate Cards -->
+                <div class="certificate-card scroll-animate" data-animation="up" style="transition-delay: 0.1s">
+                    <div class="certificate-badge">
+                        <i class="fab fa-microsoft"></i> Microsoft
+                    </div>
+                    <div class="certificate-thumbnail">
+                        <div class="pdf-thumbnail" data-pdf="assets/pdf/webdevvscode.pdf">
+                            <i class="fas fa-code"></i>
+                            <span class="pdf-preview-text">Web Development</span>
+                        </div>
+                    </div>
+                    <div class="certificate-info">
+                        <h3>Web Development with VS Code</h3>
+                        <p>Sertifikat Microsoft untuk pengembangan web menggunakan Visual Studio Code.</p>
+                        <div class="certificate-date">
+                            <i class="far fa-calendar"></i> November 2025
+                        </div>
+                        <div class="certificate-actions">
+                            <button class="btn-preview" data-pdf="assets/pdf/webdevvscode.pdf" data-title="Web Development with VS Code - Microsoft">
+                                <i class="fas fa-eye"></i> Preview
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="certificate-card scroll-animate" data-animation="up" style="transition-delay: 0.2s">
+                    <div class="certificate-badge">
+                        <i class="fab fa-python"></i> Python
+                    </div>
+                    <div class="certificate-thumbnail">
+                        <div class="pdf-thumbnail" data-pdf="assets/pdf/pythoncode.pdf">
+                            <i class="fas fa-cube"></i>
+                            <span class="pdf-preview-text">Minecraft Python</span>
+                        </div>
+                    </div>
+                    <div class="certificate-info">
+                        <h3>Python Coding in Minecraft</h3>
+                        <p>Sertifikat Microsoft untuk pemrograman Python dalam lingkungan Minecraft.</p>
+                        <div class="certificate-date">
+                            <i class="far fa-calendar"></i> November 2025
+                        </div>
+                        <div class="certificate-actions">
+                            <button class="btn-preview" data-pdf="assets/pdf/pythoncode.pdf" data-title="Python Coding in Minecraft - Microsoft">
+                                <i class="fas fa-eye"></i> Preview
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="certificate-card scroll-animate" data-animation="up" style="transition-delay: 0.3s">
+                    <div class="certificate-badge">
+                        <i class="fas fa-chart-bar"></i> Data Analysis
+                    </div>
+                    <div class="certificate-thumbnail">
+                        <div class="pdf-thumbnail" data-pdf="assets/pdf/analisdatapy.pdf">
+                            <i class="fas fa-database"></i>
+                            <span class="pdf-preview-text">Data Analysis</span>
+                        </div>
+                    </div>
+                    <div class="certificate-info">
+                        <h3>Data Analysis with Python</h3>
+                        <p>Sertifikat Microsoft untuk analisis data menggunakan Python.</p>
+                        <div class="certificate-date">
+                            <i class="far fa-calendar"></i> November 2025
+                        </div>
+                        <div class="certificate-actions">
+                            <button class="btn-preview" data-pdf="assets/pdf/analisdatapy.pdf" data-title="Data Analysis with Python - Microsoft">
+                                <i class="fas fa-eye"></i> Preview
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section id="github" class="github-projects">
         <div class="container">
             <div class="section-title scroll-animate" data-animation="bottom">
-                <h2>Project Showcase</h2>
+                <h2>GitHub Showcase</h2>
                 <p>Eksplorasi kode dan kontribusi open source saya</p>
             </div>
             
@@ -462,6 +659,76 @@
                 <div class="loader">
                     <div class="spinner"></div>
                     <p>Menghubungkan ke GitHub API...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NEW SECTION: External Projects -->
+    <section id="projects" class="external-projects">
+        <div class="container">
+            <div class="section-title scroll-animate" data-animation="bottom">
+                <h2>Live Projects</h2>
+                <p>Proyek aplikasi web yang sedang berjalan</p>
+            </div>
+            
+            <div class="external-projects-grid">
+                <div class="external-project-card scroll-animate" data-animation="left">
+                    <div class="project-image">
+                        <div class="project-image-placeholder weather-app">
+                            <i class="fas fa-cloud-sun"></i>
+                        </div>
+                        <div class="project-live-badge">
+                            <i class="fas fa-circle"></i> Live
+                        </div>
+                    </div>
+                    <div class="project-info">
+                        <h3>Weather App</h3>
+                        <p>Aplikasi cuaca real-time dengan antarmuka modern yang menampilkan informasi cuaca terkini, prakiraan 7 hari, dan lokasi pengguna.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">HTML</span>
+                            <span class="tech-tag">CSS</span>
+                            <span class="tech-tag">JavaScript</span>
+                            <span class="tech-tag">API</span>
+                        </div>
+                        <div class="project-links">
+                            <a href="https://weather-app-dipzkyy.vercel.app/" target="_blank" class="btn btn-primary">
+                                <i class="fas fa-external-link-alt"></i> Visit Site
+                            </a>
+                            <a href="https://github.com/dipzkyy/weather-app" target="_blank" class="btn btn-secondary">
+                                <i class="fab fa-github"></i> Source Code
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="external-project-card scroll-animate" data-animation="right">
+                    <div class="project-image">
+                        <div class="project-image-placeholder tib-class">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                        <div class="project-live-badge">
+                            <i class="fas fa-circle"></i> Live
+                        </div>
+                    </div>
+                    <div class="project-info">
+                        <h3>TIB Class Platform</h3>
+                        <p>Platform pembelajaran online dengan fitur kelas virtual, materi interaktif, dan sistem manajemen siswa.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">React</span>
+                            <span class="tech-tag">Node.js</span>
+                            <span class="tech-tag">MongoDB</span>
+                            <span class="tech-tag">Express</span>
+                        </div>
+                        <div class="project-links">
+                            <a href="https://tib-class.vercel.app/" target="_blank" class="btn btn-primary">
+                                <i class="fas fa-external-link-alt"></i> Visit Site
+                            </a>
+                            <a href="https://github.com/dipzkyy/tib-class" target="_blank" class="btn btn-secondary">
+                                <i class="fab fa-github"></i> Source Code
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -505,7 +772,7 @@
                         <h3>Informasi Kontak</h3>
                         <p>Siap bekerja secara remote maupun on-site untuk area Jawa Timur.</p>
                         <div class="contact-list">
-                            <a href="mailto:mzdp12@gmail.com" class="contact-link">
+                            <a href="mailto:mzdp12@gmail.com" class="contact-link" id="emailLink">
                                 <i class="fas fa-envelope"></i> mzdp12@gmail.com
                             </a>
                             <a href="#" class="contact-link">
@@ -513,9 +780,12 @@
                             </a>
                         </div>
                         <div class="social-connect">
-                            <a href="https://github.com/dipzkyy" target="_blank"><i class="fab fa-github"></i></a>
-                            <a href="https://www.instagram.com/dipa_rizky/" target="_blank"><i class="fab fa-instagram"></i></a>
-                            <a href="https://www.linkedin.com/" target="_blank"><i class="fab fa-linkedin"></i></a>
+                            <a href="https://github.com/dipzkyy" target="_blank" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                            <a href="https://www.instagram.com/dipa_rizky/" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                            <a href="https://www.linkedin.com/" target="_blank" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                            <button class="share-btn" id="shareBtn" aria-label="Share Portfolio">
+                                <i class="fas fa-share-alt"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -559,7 +829,13 @@
                     <i class="fas fa-code-branch"></i> Dipzkyy<span>Dev</span>
                 </div>
                 <p class="copyright">&copy; 2025 Diva Islamy Rizky Akbar. All Rights Reserved.</p>
-                <p class="tech-stack-info">Built with HTML5, CSS3, & Vanilla JS</p>
+                <p class="tech-stack-info">Built with HTML5, CSS3, Vanilla JS & PDF.js</p>
+                <div class="footer-links">
+                    <a href="#home">Home</a> •
+                    <a href="#certificates">Sertifikat</a> •
+                    <a href="#projects">Proyek</a> •
+                    <a href="#contact">Kontak</a>
+                </div>
             </div>
         </div>
     </footer>
